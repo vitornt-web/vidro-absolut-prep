@@ -2,8 +2,9 @@ import HeroSection from "@/components/HeroSection";
 import BenefitsSection from "@/components/BenefitsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import ModulesSection from "@/components/ModulesSection";
-import CTASection from "@/components/CTASection";
+import CheckoutSection from "@/components/CheckoutSection";
 import Footer from "@/components/Footer";
+import AdminPanel from "@/components/AdminPanel";
 
 const Index = () => {
   return (
@@ -12,8 +13,9 @@ const Index = () => {
       <BenefitsSection />
       <TestimonialsSection />
       <ModulesSection />
-      <CTASection />
+      <CheckoutSection />
       <Footer />
+      <AdminPanel />
     </main>
   );
 };
