@@ -1,11 +1,13 @@
+import vidroLogo from "@/assets/vidro-logo.jpg";
+
 const Footer = () => {
   return (
     <footer className="py-12 border-t border-border/50">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-gold" />
+          <div className="flex items-center gap-3">
+            <img src={vidroLogo} alt="Vidro Absolut" className="w-10 h-10 rounded-lg object-cover" />
             <span className="text-xl font-display font-bold">
               Vidro <span className="text-gradient-gold">Absolut</span>
             </span>
