@@ -25,7 +25,7 @@ const HeroSection = () => {
             style={{ animationDelay: "0.1s", animationFillMode: "both" }}
           >
             <span className="px-4 py-2 rounded-full border border-gold/30 text-gold text-sm font-medium bg-gold/5">
-              Método exclusivo para o ENEM 2025
+              Método exclusivo para o ENEM 2026
             </span>
           </div>
 
@@ -45,7 +45,7 @@ const HeroSection = () => {
           >
             O <span className="text-foreground font-semibold">Vidro Absolut</span> é o método 
             que transforma sua preparação para o ENEM em um caminho claro e estratégico. 
-            Estude certo, não estude mais.
+            Melhor custo-benefício comparado a cursinhos acima de R$ 2.000.
           </p>
 
           {/* CTA Buttons */}
@@ -59,24 +59,6 @@ const HeroSection = () => {
             <Button variant="goldOutline" size="lg">
               Ver como funciona
             </Button>
-          </div>
-
-          {/* Social Proof Mini */}
-          <div 
-            className="flex items-center justify-center gap-2 text-muted-foreground text-sm animate-fade-up"
-            style={{ animationDelay: "0.5s", animationFillMode: "both" }}
-          >
-            <div className="flex -space-x-2">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div
-                  key={i}
-                  className="w-8 h-8 rounded-full bg-gradient-gold border-2 border-background"
-                />
-              ))}
-            </div>
-            <span className="ml-2">
-              +2.500 alunos já transformaram seus estudos
-            </span>
           </div>
         </div>
       </div>
