@@ -106,71 +106,108 @@ const AdminPanel = () => {
         ) : (
           /* Dashboard */
           <div className="p-6 overflow-auto max-h-[calc(90vh-80px)]">
-            {/* Stats */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-secondary rounded-xl p-4">
-                <p className="text-muted-foreground text-sm">Total de Cadastros</p>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-secondary rounded-xl p-4 border border-border">
+                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Total de Cadastros</p>
                 <p className="text-3xl font-bold text-gold">{customers.length}</p>
               </div>
-              <div className="bg-secondary rounded-xl p-4">
-                <p className="text-muted-foreground text-sm">Valor Potencial</p>
-                <p className="text-3xl font-bold text-gold">
+              <div className="bg-secondary rounded-xl p-4 border border-border">
+                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Valor Total</p>
+                <p className="text-3xl font-bold text-emerald-500">
                   R$ {totalValue.toFixed(2).replace(".", ",")}
+                </p>
+              </div>
+              <div className="bg-secondary rounded-xl p-4 border border-border">
+                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Preço Unitário</p>
+                <p className="text-3xl font-bold text-foreground">R$ 40,00</p>
+              </div>
+              <div className="bg-secondary rounded-xl p-4 border border-border">
+                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Último Cadastro</p>
+                <p className="text-lg font-bold text-foreground">
+                  {customers.length > 0 ? customers[customers.length - 1].data : "-"}
                 </p>
               </div>
             </div>
 
-            {/* Table */}
-            {customers.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left p-3 text-muted-foreground font-medium">Data</th>
-                      <th className="text-left p-3 text-muted-foreground font-medium">Nome</th>
-                      <th className="text-left p-3 text-muted-foreground font-medium">CPF</th>
-                      <th className="text-left p-3 text-muted-foreground font-medium">Telegram</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {customers.map((customer, index) => (
-                      <tr key={index} className="border-b border-border/50 hover:bg-secondary/50">
-                        <td className="p-3">{customer.data}</td>
-                        <td className="p-3">{customer.nome} {customer.sobrenome}</td>
-                        <td className="p-3 font-mono">{customer.cpf}</td>
-                        <td className="p-3">
-                          <a
-                            href={`https://t.me/${customer.telegram.replace("@", "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-gold hover:underline"
-                          >
-                            {customer.telegram}
-                          </a>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                Nenhum cadastro ainda
-              </div>
-            )}
-
-            {/* Actions */}
-            {customers.length > 0 && (
-              <div className="mt-6 flex justify-end">
+            {/* Table Header */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Planilha de Clientes</h3>
+              {customers.length > 0 && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={clearAllData}
-                  className="text-destructive hover:text-destructive"
+                  className="text-destructive hover:text-destructive border-destructive/30"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Limpar Dados
+                  Limpar Tudo
                 </Button>
+              )}
+            </div>
+
+            {/* Table */}
+            {customers.length > 0 ? (
+              <div className="border border-border rounded-xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-secondary">
+                      <tr>
+                        <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">#</th>
+                        <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Data</th>
+                        <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Nome Completo</th>
+                        <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">CPF</th>
+                        <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Telegram</th>
+                        <th className="text-right p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {customers.map((customer, index) => (
+                        <tr 
+                          key={index} 
+                          className="border-b border-border/50 hover:bg-secondary/50 transition-colors"
+                        >
+                          <td className="p-4 text-muted-foreground font-mono text-xs">{index + 1}</td>
+                          <td className="p-4 text-muted-foreground">{customer.data}</td>
+                          <td className="p-4 font-medium">{customer.nome} {customer.sobrenome}</td>
+                          <td className="p-4 font-mono text-sm">{customer.cpf}</td>
+                          <td className="p-4">
+                            <a
+                              href={`https://t.me/${customer.telegram.replace("@", "")}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-gold hover:underline"
+                            >
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.654-.64.135-.954l11.566-4.458c.538-.196 1.006.128.828.94z"/>
+                              </svg>
+                              {customer.telegram}
+                            </a>
+                          </td>
+                          <td className="p-4 text-right font-semibold text-emerald-500">R$ 40,00</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-secondary/80">
+                      <tr>
+                        <td colSpan={5} className="p-4 text-right font-semibold text-muted-foreground">TOTAL:</td>
+                        <td className="p-4 text-right font-bold text-lg text-emerald-500">
+                          R$ {totalValue.toFixed(2).replace(".", ",")}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="border border-dashed border-border rounded-xl py-16 text-center">
+                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <p className="text-muted-foreground">Nenhum cliente cadastrado ainda</p>
+                <p className="text-sm text-muted-foreground/60 mt-1">Os cadastros aparecerão aqui</p>
               </div>
             )}
           </div>
