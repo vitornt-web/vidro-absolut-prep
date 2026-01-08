@@ -2,8 +2,12 @@ import { Button } from "@/components/ui/button";
 import heroMountain from "@/assets/hero-mountain.jpg";
 
 const HeroSection = () => {
-  const scrollToModules = () => {
-    document.getElementById("modules")?.scrollIntoView({ behavior: "smooth" });
+  const scrollToCheckout = () => {
+    document.getElementById("checkout")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const scrollToBenefits = () => {
+    document.getElementById("benefits")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -53,10 +57,10 @@ const HeroSection = () => {
             className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4 animate-fade-up"
             style={{ animationDelay: "0.4s", animationFillMode: "both" }}
           >
-            <Button variant="gold" size="xl" onClick={scrollToModules}>
+            <Button variant="gold" size="xl" onClick={scrollToCheckout}>
               Quero me inscrever agora
             </Button>
-            <Button variant="goldOutline" size="lg">
+            <Button variant="goldOutline" size="lg" onClick={scrollToBenefits}>
               Ver como funciona
             </Button>
           </div>
