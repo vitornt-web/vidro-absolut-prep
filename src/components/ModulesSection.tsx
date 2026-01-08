@@ -1,5 +1,4 @@
 import { Brain, BookOpen, Target, FileEdit, RotateCcw, CheckCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 const modules = [
   {
@@ -109,15 +108,6 @@ const ModulesSection = () => {
           ))}
         </div>
 
-        {/* CTA */}
-        <div className="text-center mt-12">
-          <Button variant="gold" size="xl">
-            Garantir minha vaga agora
-          </Button>
-          <p className="mt-4 text-muted-foreground text-sm">
-            Acesso imediato • Garantia de 7 dias
-          </p>
-        </div>
       </div>
     </section>
   );
