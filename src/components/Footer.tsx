@@ -15,11 +15,11 @@ const Footer = () => {
 
           {/* Links */}
           <div className="flex gap-8 text-sm text-muted-foreground">
-            <a href="#benefits" className="hover:text-gold transition-colors">
-              Como Funciona
+            <a href="#" className="hover:text-gold transition-colors">
+              Termos de uso
             </a>
-            <a href="#checkout" className="hover:text-gold transition-colors">
-              Quero me Inscrever
+            <a href="#" className="hover:text-gold transition-colors">
+              Política de privacidade
             </a>
             <a 
               href="https://t.me/studyvituu" 
