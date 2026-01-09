@@ -1,217 +1,320 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Lock, Trash2 } from "lucide-react";
+import { X, Lock, Trash2, Minus, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
-interface CustomerData {
-  nome: string;
-  sobrenome: string;
+interface Purchase {
+  id: string;
+  purchase_type: string;
+  amount: number;
+  name: string;
   cpf: string;
-  telegram: string;
-  data: string;
+  telegram: string | null;
+  name_2: string | null;
+  cpf_2: string | null;
+  telegram_2: string | null;
+  created_at: string;
 }
 
-const ADMIN_PASSWORD = "vitor2026";
+interface AdminSettings {
+  id: string;
+  total_collected_adjustment: number;
+}
 
 const AdminPanel = () => {
+  const { user, isAdmin, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState("");
-  const [customers, setCustomers] = useState<CustomerData[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [adminSettings, setAdminSettings] = useState<AdminSettings | null>(null);
+  const [adjustmentInput, setAdjustmentInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadCustomers();
+    if (isOpen && isAdmin) {
+      loadData();
     }
-  }, [isAuthenticated]);
+  }, [isOpen, isAdmin]);
 
-  const loadCustomers = () => {
-    const data = JSON.parse(localStorage.getItem("vidro_absolut_customers") || "[]");
-    setCustomers(data);
-  };
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      // Load purchases
+      const { data: purchasesData, error: purchasesError } = await supabase
+        .from("purchases")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      toast.success("Acesso autorizado!");
-    } else {
-      toast.error("Senha incorreta!");
+      if (purchasesError) throw purchasesError;
+      setPurchases(purchasesData || []);
+
+      // Load admin settings
+      const { data: settingsData, error: settingsError } = await supabase
+        .from("admin_settings")
+        .select("*")
+        .single();
+
+      if (settingsError && settingsError.code !== "PGRST116") throw settingsError;
+      setAdminSettings(settingsData);
+    } catch (error) {
+      console.error("Error loading data:", error);
+      toast.error("Erro ao carregar dados");
+    } finally {
+      setIsLoading(false);
     }
-    setPassword("");
   };
 
   const handleClose = () => {
     setIsOpen(false);
-    setIsAuthenticated(false);
-    setPassword("");
   };
 
-  const clearAllData = () => {
-    if (confirm("Tem certeza que deseja apagar todos os dados?")) {
-      localStorage.removeItem("vidro_absolut_customers");
-      setCustomers([]);
-      toast.success("Dados apagados!");
+  const applyAdjustment = async () => {
+    const value = parseFloat(adjustmentInput.replace(",", "."));
+    if (isNaN(value) || value <= 0) {
+      toast.error("Digite um valor válido");
+      return;
     }
+
+    if (!adminSettings) return;
+
+    const newAdjustment = (adminSettings.total_collected_adjustment || 0) + value;
+
+    const { error } = await supabase
+      .from("admin_settings")
+      .update({ total_collected_adjustment: newAdjustment })
+      .eq("id", adminSettings.id);
+
+    if (error) {
+      toast.error("Erro ao aplicar ajuste");
+      return;
+    }
+
+    setAdminSettings({ ...adminSettings, total_collected_adjustment: newAdjustment });
+    setAdjustmentInput("");
+    toast.success(`R$ ${value.toFixed(2).replace(".", ",")} subtraído do total`);
   };
 
-  const totalValue = customers.length * 40;
+  const deletePurchase = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir esta compra?")) return;
+
+    const { error } = await supabase.from("purchases").delete().eq("id", id);
+
+    if (error) {
+      toast.error("Erro ao excluir compra");
+      return;
+    }
+
+    setPurchases(purchases.filter((p) => p.id !== id));
+    toast.success("Compra excluída");
+  };
+
+  const grossTotal = purchases.reduce((sum, p) => sum + Number(p.amount), 0);
+  const adjustment = adminSettings?.total_collected_adjustment || 0;
+  const netTotal = grossTotal - adjustment;
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("pt-BR");
+  };
+
+  // Only show admin button if user is admin
+  if (!isAdmin) {
+    return null;
+  }
 
   if (!isOpen) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-4 text-xs text-muted-foreground/30 hover:text-muted-foreground transition-colors"
+        className="fixed bottom-4 right-4 bg-gold text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium shadow-lg hover:bg-gold/90 transition-colors"
       >
-        Admin
+        Painel Admin
       </button>
     );
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/90 backdrop-blur-sm">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl">
+      <div className="bg-card border border-border rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-xl font-display font-bold">
-            Painel de Vendas
-          </h2>
-          <button onClick={handleClose} className="text-muted-foreground hover:text-foreground">
-            <X className="w-6 h-6" />
-          </button>
+          <h2 className="text-xl font-display font-bold">Painel de Vendas - Admin</h2>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={signOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
+            <button onClick={handleClose} className="text-muted-foreground hover:text-foreground">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
-        {!isAuthenticated ? (
-          /* Login Form */
-          <div className="p-8">
-            <div className="max-w-sm mx-auto text-center">
-              <div className="w-16 h-16 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-6">
-                <Lock className="w-8 h-8 text-gold" />
-              </div>
-              <h3 className="text-lg font-semibold mb-6">Digite a senha de acesso</h3>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <Input
-                  type="password"
-                  placeholder="Senha"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <Button type="submit" variant="gold" className="w-full">
-                  Entrar
-                </Button>
-              </form>
+        {/* Dashboard */}
+        <div className="p-6 overflow-auto max-h-[calc(90vh-80px)]">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold"></div>
             </div>
-          </div>
-        ) : (
-          /* Dashboard */
-          <div className="p-6 overflow-auto max-h-[calc(90vh-80px)]">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-secondary rounded-xl p-4 border border-border">
-                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Total de Cadastros</p>
-                <p className="text-3xl font-bold text-gold">{customers.length}</p>
+          ) : (
+            <>
+              {/* Stats Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-secondary rounded-xl p-4 border border-border">
+                  <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Total de Compras</p>
+                  <p className="text-3xl font-bold text-gold">{purchases.length}</p>
+                </div>
+                <div className="bg-secondary rounded-xl p-4 border border-border">
+                  <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Valor Bruto</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    R$ {grossTotal.toFixed(2).replace(".", ",")}
+                  </p>
+                </div>
+                <div className="bg-secondary rounded-xl p-4 border border-border">
+                  <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Ajustes</p>
+                  <p className="text-2xl font-bold text-destructive">
+                    -R$ {adjustment.toFixed(2).replace(".", ",")}
+                  </p>
+                </div>
+                <div className="bg-secondary rounded-xl p-4 border border-border">
+                  <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Valor Líquido</p>
+                  <p className="text-3xl font-bold text-emerald-500">
+                    R$ {netTotal.toFixed(2).replace(".", ",")}
+                  </p>
+                </div>
               </div>
-              <div className="bg-secondary rounded-xl p-4 border border-border">
-                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Valor Total</p>
-                <p className="text-3xl font-bold text-emerald-500">
-                  R$ {totalValue.toFixed(2).replace(".", ",")}
-                </p>
-              </div>
-              <div className="bg-secondary rounded-xl p-4 border border-border">
-                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Preço Unitário</p>
-                <p className="text-3xl font-bold text-foreground">R$ 40,00</p>
-              </div>
-              <div className="bg-secondary rounded-xl p-4 border border-border">
-                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Último Cadastro</p>
-                <p className="text-lg font-bold text-foreground">
-                  {customers.length > 0 ? customers[customers.length - 1].data : "-"}
-                </p>
-              </div>
-            </div>
 
-            {/* Table Header */}
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Planilha de Clientes</h3>
-              {customers.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearAllData}
-                  className="text-destructive hover:text-destructive border-destructive/30"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Limpar Tudo
-                </Button>
-              )}
-            </div>
+              {/* Adjustment Control */}
+              <div className="bg-secondary/50 rounded-xl p-4 border border-border mb-6">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Minus className="w-4 h-4" />
+                  Diminuir Valor Arrecadado
+                </h4>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Valor a subtrair (ex: 45,00)"
+                    value={adjustmentInput}
+                    onChange={(e) => setAdjustmentInput(e.target.value)}
+                    className="max-w-xs"
+                  />
+                  <Button variant="outline" onClick={applyAdjustment}>
+                    Aplicar
+                  </Button>
+                </div>
+              </div>
 
-            {/* Table */}
-            {customers.length > 0 ? (
-              <div className="border border-border rounded-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-secondary">
-                      <tr>
-                        <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">#</th>
-                        <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Data</th>
-                        <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Nome Completo</th>
-                        <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">CPF</th>
-                        <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Telegram</th>
-                        <th className="text-right p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Valor</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {customers.map((customer, index) => (
-                        <tr 
-                          key={index} 
-                          className="border-b border-border/50 hover:bg-secondary/50 transition-colors"
-                        >
-                          <td className="p-4 text-muted-foreground font-mono text-xs">{index + 1}</td>
-                          <td className="p-4 text-muted-foreground">{customer.data}</td>
-                          <td className="p-4 font-medium">{customer.nome} {customer.sobrenome}</td>
-                          <td className="p-4 font-mono text-sm">{customer.cpf}</td>
-                          <td className="p-4">
-                            <a
-                              href={`https://t.me/${customer.telegram.replace("@", "")}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-gold hover:underline"
-                            >
-                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.654-.64.135-.954l11.566-4.458c.538-.196 1.006.128.828.94z"/>
-                              </svg>
-                              {customer.telegram}
-                            </a>
-                          </td>
-                          <td className="p-4 text-right font-semibold text-emerald-500">R$ 40,00</td>
+              {/* Table Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Compras Registradas</h3>
+              </div>
+
+              {/* Table */}
+              {purchases.length > 0 ? (
+                <div className="border border-border rounded-xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-secondary">
+                        <tr>
+                          <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Data</th>
+                          <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Tipo</th>
+                          <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Pessoa 1</th>
+                          <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Pessoa 2</th>
+                          <th className="text-right p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Valor</th>
+                          <th className="text-center p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Ações</th>
                         </tr>
-                      ))}
-                    </tbody>
-                    <tfoot className="bg-secondary/80">
-                      <tr>
-                        <td colSpan={5} className="p-4 text-right font-semibold text-muted-foreground">TOTAL:</td>
-                        <td className="p-4 text-right font-bold text-lg text-emerald-500">
-                          R$ {totalValue.toFixed(2).replace(".", ",")}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {purchases.map((purchase) => (
+                          <tr key={purchase.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
+                            <td className="p-4 text-muted-foreground">{formatDate(purchase.created_at)}</td>
+                            <td className="p-4">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                purchase.purchase_type === "casadinha"
+                                  ? "bg-gold/20 text-gold"
+                                  : "bg-secondary text-foreground"
+                              }`}>
+                                {purchase.purchase_type === "casadinha" ? "Casadinha" : "Individual"}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <div>
+                                <p className="font-medium">{purchase.name}</p>
+                                <p className="text-xs text-muted-foreground">{purchase.cpf}</p>
+                                {purchase.telegram && (
+                                  <a
+                                    href={`https://t.me/${purchase.telegram.replace("@", "")}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-gold hover:underline"
+                                  >
+                                    {purchase.telegram}
+                                  </a>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              {purchase.name_2 ? (
+                                <div>
+                                  <p className="font-medium">{purchase.name_2}</p>
+                                  <p className="text-xs text-muted-foreground">{purchase.cpf_2}</p>
+                                  {purchase.telegram_2 && (
+                                    <a
+                                      href={`https://t.me/${purchase.telegram_2.replace("@", "")}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-gold hover:underline"
+                                    >
+                                      {purchase.telegram_2}
+                                    </a>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </td>
+                            <td className="p-4 text-right font-semibold text-emerald-500">
+                              R$ {Number(purchase.amount).toFixed(2).replace(".", ",")}
+                            </td>
+                            <td className="p-4 text-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deletePurchase(purchase.id)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-secondary/80">
+                        <tr>
+                          <td colSpan={4} className="p-4 text-right font-semibold text-muted-foreground">TOTAL LÍQUIDO:</td>
+                          <td className="p-4 text-right font-bold text-lg text-emerald-500">
+                            R$ {netTotal.toFixed(2).replace(".", ",")}
+                          </td>
+                          <td></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="border border-dashed border-border rounded-xl py-16 text-center">
-                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
+              ) : (
+                <div className="border border-dashed border-border rounded-xl py-16 text-center">
+                  <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-muted-foreground">Nenhuma compra registrada ainda</p>
+                  <p className="text-sm text-muted-foreground/60 mt-1">As compras aparecerão aqui</p>
                 </div>
-                <p className="text-muted-foreground">Nenhum cliente cadastrado ainda</p>
-                <p className="text-sm text-muted-foreground/60 mt-1">Os cadastros aparecerão aqui</p>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
