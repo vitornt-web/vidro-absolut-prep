@@ -1,29 +1,44 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Clock, Users, Check, Copy, X } from "lucide-react";
+import { Shield, Clock, Users, Check, Copy, X, User, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
-interface CustomerData {
+const PIX_KEY = "538afa8c-0d27-49bb-a98c-f1c9d489d273";
+
+type PurchaseType = "individual" | "casadinha";
+
+interface PersonData {
   nome: string;
   sobrenome: string;
   cpf: string;
   telegram: string;
-  data: string;
 }
 
-const PIX_KEY = "538afa8c-0d27-49bb-a98c-f1c9d489d273";
-
 const CheckoutSection = () => {
-  const [formData, setFormData] = useState({
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [purchaseType, setPurchaseType] = useState<PurchaseType>("individual");
+  const [person1, setPerson1] = useState<PersonData>({
+    nome: "",
+    sobrenome: "",
+    cpf: "",
+    telegram: "",
+  });
+  const [person2, setPerson2] = useState<PersonData>({
     nome: "",
     sobrenome: "",
     cpf: "",
     telegram: "",
   });
   const [showPixModal, setShowPixModal] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors1, setErrors1] = useState<Record<string, string>>({});
+  const [errors2, setErrors2] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formatCPF = (value: string) => {
     const numbers = value.replace(/\D/g, "");
@@ -34,19 +49,19 @@ const CheckoutSection = () => {
       .slice(0, 14);
   };
 
-  const validateForm = () => {
+  const validatePerson = (data: PersonData, setErrors: (e: Record<string, string>) => void) => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.nome.trim()) {
+    if (!data.nome.trim()) {
       newErrors.nome = "Nome é obrigatório";
     }
-    if (!formData.sobrenome.trim()) {
+    if (!data.sobrenome.trim()) {
       newErrors.sobrenome = "Sobrenome é obrigatório";
     }
-    if (!formData.cpf || formData.cpf.replace(/\D/g, "").length !== 11) {
+    if (!data.cpf || data.cpf.replace(/\D/g, "").length !== 11) {
       newErrors.cpf = "CPF inválido";
     }
-    if (!formData.telegram.trim()) {
+    if (!data.telegram.trim()) {
       newErrors.telegram = "User do Telegram é obrigatório";
     }
     
@@ -54,25 +69,52 @@ const CheckoutSection = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user) {
+      toast.error("Você precisa estar logado para fazer uma compra");
+      navigate("/auth");
+      return;
+    }
+
+    const valid1 = validatePerson(person1, setErrors1);
+    const valid2 = purchaseType === "casadinha" ? validatePerson(person2, setErrors2) : true;
     
-    if (!validateForm()) {
+    if (!valid1 || !valid2) {
       toast.error("Por favor, preencha todos os campos corretamente");
       return;
     }
 
-    // Save customer data to localStorage
-    const customerData: CustomerData = {
-      ...formData,
-      data: new Date().toLocaleDateString("pt-BR"),
-    };
+    setIsSubmitting(true);
 
-    const existingData = JSON.parse(localStorage.getItem("vidro_absolut_customers") || "[]");
-    existingData.push(customerData);
-    localStorage.setItem("vidro_absolut_customers", JSON.stringify(existingData));
+    try {
+      const amount = purchaseType === "individual" ? 45.0 : 80.0;
+      
+      const purchaseData = {
+        user_id: user.id,
+        purchase_type: purchaseType,
+        amount,
+        name: `${person1.nome} ${person1.sobrenome}`,
+        cpf: person1.cpf,
+        telegram: person1.telegram,
+        name_2: purchaseType === "casadinha" ? `${person2.nome} ${person2.sobrenome}` : null,
+        cpf_2: purchaseType === "casadinha" ? person2.cpf : null,
+        telegram_2: purchaseType === "casadinha" ? person2.telegram : null,
+      };
 
-    setShowPixModal(true);
+      const { error } = await supabase.from("purchases").insert(purchaseData);
+
+      if (error) {
+        toast.error("Erro ao registrar compra. Tente novamente.");
+        console.error(error);
+        return;
+      }
+
+      setShowPixModal(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const copyPixKey = () => {
@@ -80,22 +122,95 @@ const CheckoutSection = () => {
     toast.success("Chave PIX copiada!");
   };
 
-  const handleChange = (field: string, value: string) => {
+  const handleChangePerson = (
+    person: "1" | "2",
+    field: keyof PersonData,
+    value: string
+  ) => {
     let formattedValue = value;
     
     if (field === "cpf") {
       formattedValue = formatCPF(value);
     }
     
-    if (field === "telegram") {
-      formattedValue = value.startsWith("@") ? value : `@${value}`;
+    if (field === "telegram" && value && !value.startsWith("@")) {
+      formattedValue = `@${value}`;
     }
     
-    setFormData(prev => ({ ...prev, [field]: formattedValue }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
+    if (person === "1") {
+      setPerson1((prev) => ({ ...prev, [field]: formattedValue }));
+      if (errors1[field]) {
+        setErrors1((prev) => ({ ...prev, [field]: "" }));
+      }
+    } else {
+      setPerson2((prev) => ({ ...prev, [field]: formattedValue }));
+      if (errors2[field]) {
+        setErrors2((prev) => ({ ...prev, [field]: "" }));
+      }
     }
   };
+
+  const renderPersonForm = (
+    person: "1" | "2",
+    data: PersonData,
+    errors: Record<string, string>,
+    title: string
+  ) => (
+    <div className="space-y-4">
+      <h4 className="font-semibold text-lg flex items-center gap-2">
+        <User className="w-5 h-5 text-gold" />
+        {title}
+      </h4>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Nome</Label>
+          <Input
+            placeholder="Nome"
+            value={data.nome}
+            onChange={(e) => handleChangePerson(person, "nome", e.target.value)}
+            className={errors.nome ? "border-destructive" : ""}
+          />
+          {errors.nome && <p className="text-sm text-destructive">{errors.nome}</p>}
+        </div>
+        
+        <div className="space-y-2">
+          <Label>Sobrenome</Label>
+          <Input
+            placeholder="Sobrenome"
+            value={data.sobrenome}
+            onChange={(e) => handleChangePerson(person, "sobrenome", e.target.value)}
+            className={errors.sobrenome ? "border-destructive" : ""}
+          />
+          {errors.sobrenome && <p className="text-sm text-destructive">{errors.sobrenome}</p>}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>CPF</Label>
+        <Input
+          placeholder="000.000.000-00"
+          value={data.cpf}
+          onChange={(e) => handleChangePerson(person, "cpf", e.target.value)}
+          className={errors.cpf ? "border-destructive" : ""}
+        />
+        {errors.cpf && <p className="text-sm text-destructive">{errors.cpf}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label>User do Telegram</Label>
+        <Input
+          placeholder="@seuuser"
+          value={data.telegram}
+          onChange={(e) => handleChangePerson(person, "telegram", e.target.value)}
+          className={errors.telegram ? "border-destructive" : ""}
+        />
+        {errors.telegram && <p className="text-sm text-destructive">{errors.telegram}</p>}
+      </div>
+    </div>
+  );
+
+  const currentPrice = purchaseType === "individual" ? 45 : 80;
 
   return (
     <>
@@ -117,65 +232,76 @@ const CheckoutSection = () => {
                 Matrícula <span className="text-gradient-gold">2026</span>
               </h2>
 
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Preencha seus dados para gerar o pagamento via PIX
-              </p>
+              {!user && (
+                <div className="bg-gold/10 border border-gold/30 rounded-xl p-4 max-w-md mx-auto mb-8">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Faça login ou cadastre-se para garantir sua vaga
+                  </p>
+                  <Button variant="gold" onClick={() => navigate("/auth")}>
+                    Entrar / Cadastrar
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Purchase Type Selector */}
+            <div className="flex justify-center gap-4 mb-8">
+              <button
+                onClick={() => setPurchaseType("individual")}
+                className={`flex items-center gap-3 px-6 py-4 rounded-xl border-2 transition-all ${
+                  purchaseType === "individual"
+                    ? "border-gold bg-gold/10"
+                    : "border-border hover:border-gold/50"
+                }`}
+              >
+                <User className={`w-6 h-6 ${purchaseType === "individual" ? "text-gold" : "text-muted-foreground"}`} />
+                <div className="text-left">
+                  <p className={`font-semibold ${purchaseType === "individual" ? "text-gold" : ""}`}>
+                    Individual
+                  </p>
+                  <p className="text-sm text-muted-foreground">R$ 45,00</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setPurchaseType("casadinha")}
+                className={`flex items-center gap-3 px-6 py-4 rounded-xl border-2 transition-all ${
+                  purchaseType === "casadinha"
+                    ? "border-gold bg-gold/10"
+                    : "border-border hover:border-gold/50"
+                }`}
+              >
+                <UserPlus className={`w-6 h-6 ${purchaseType === "casadinha" ? "text-gold" : "text-muted-foreground"}`} />
+                <div className="text-left">
+                  <p className={`font-semibold ${purchaseType === "casadinha" ? "text-gold" : ""}`}>
+                    Casadinha (2 pessoas)
+                  </p>
+                  <p className="text-sm text-muted-foreground">R$ 80,00</p>
+                </div>
+              </button>
             </div>
 
             {/* Checkout Box */}
-            <div className="grid md:grid-cols-2 gap-8 bg-card border border-gold/30 rounded-3xl p-8 md:p-12 shadow-xl shadow-gold/10">
+            <div className="grid lg:grid-cols-2 gap-8 bg-card border border-gold/30 rounded-3xl p-8 md:p-12 shadow-xl shadow-gold/10">
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="nome">Nome</Label>
-                  <Input
-                    id="nome"
-                    placeholder="Seu nome"
-                    value={formData.nome}
-                    onChange={(e) => handleChange("nome", e.target.value)}
-                    className={errors.nome ? "border-destructive" : ""}
-                  />
-                  {errors.nome && <p className="text-sm text-destructive">{errors.nome}</p>}
-                </div>
+                {renderPersonForm("1", person1, errors1, purchaseType === "casadinha" ? "Pessoa 1" : "Seus Dados")}
+                
+                {purchaseType === "casadinha" && (
+                  <>
+                    <div className="border-t border-border pt-6" />
+                    {renderPersonForm("2", person2, errors2, "Pessoa 2")}
+                  </>
+                )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="sobrenome">Sobrenome</Label>
-                  <Input
-                    id="sobrenome"
-                    placeholder="Seu sobrenome"
-                    value={formData.sobrenome}
-                    onChange={(e) => handleChange("sobrenome", e.target.value)}
-                    className={errors.sobrenome ? "border-destructive" : ""}
-                  />
-                  {errors.sobrenome && <p className="text-sm text-destructive">{errors.sobrenome}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="cpf">CPF</Label>
-                  <Input
-                    id="cpf"
-                    placeholder="000.000.000-00"
-                    value={formData.cpf}
-                    onChange={(e) => handleChange("cpf", e.target.value)}
-                    className={errors.cpf ? "border-destructive" : ""}
-                  />
-                  {errors.cpf && <p className="text-sm text-destructive">{errors.cpf}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="telegram">User do Telegram</Label>
-                  <Input
-                    id="telegram"
-                    placeholder="@seuuser"
-                    value={formData.telegram}
-                    onChange={(e) => handleChange("telegram", e.target.value)}
-                    className={errors.telegram ? "border-destructive" : ""}
-                  />
-                  {errors.telegram && <p className="text-sm text-destructive">{errors.telegram}</p>}
-                </div>
-
-                <Button type="submit" variant="gold" size="xl" className="w-full">
-                  GERAR PAGAMENTO PIX
+                <Button
+                  type="submit"
+                  variant="gold"
+                  size="xl"
+                  className="w-full"
+                  disabled={!user || isSubmitting}
+                >
+                  {isSubmitting ? "PROCESSANDO..." : "GERAR PAGAMENTO PIX"}
                 </Button>
               </form>
 
@@ -198,13 +324,21 @@ const CheckoutSection = () => {
                     <Check className="w-5 h-5 text-gold" />
                     Suporte Direto com Vitor Gabriel
                   </li>
+                  {purchaseType === "casadinha" && (
+                    <li className="flex items-center gap-3 text-gold font-medium">
+                      <Check className="w-5 h-5 text-gold" />
+                      Economia de R$ 10,00 na casadinha!
+                    </li>
+                  )}
                 </ul>
 
                 <div className="mb-6">
-                  <p className="text-muted-foreground text-sm mb-1">Investimento único</p>
+                  <p className="text-muted-foreground text-sm mb-1">
+                    {purchaseType === "casadinha" ? "Investimento para 2 pessoas" : "Investimento único"}
+                  </p>
                   <div className="flex items-baseline gap-1">
                     <span className="text-xl">R$</span>
-                    <span className="text-5xl font-display font-bold text-gradient-gold">40</span>
+                    <span className="text-5xl font-display font-bold text-gradient-gold">{currentPrice}</span>
                     <span className="text-muted-foreground">,00</span>
                   </div>
                   <p className="text-muted-foreground text-sm mt-2">Pagamento único e seguro</p>
@@ -248,6 +382,9 @@ const CheckoutSection = () => {
               </div>
 
               <h3 className="text-2xl font-display font-bold mb-2">Pagamento PIX</h3>
+              <p className="text-muted-foreground text-sm mb-2">
+                Valor: <span className="text-gold font-bold">R$ {currentPrice},00</span>
+              </p>
               <p className="text-muted-foreground text-sm mb-6">
                 Copie a chave abaixo para pagar no seu banco
               </p>
