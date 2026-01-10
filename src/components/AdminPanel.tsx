@@ -58,8 +58,7 @@ const AdminPanel = () => {
 
       if (settingsError && settingsError.code !== "PGRST116") throw settingsError;
       setAdminSettings(settingsData);
-    } catch (error) {
-      console.error("Error loading data:", error);
+    } catch {
       toast.error("Erro ao carregar dados");
     } finally {
       setIsLoading(false);
