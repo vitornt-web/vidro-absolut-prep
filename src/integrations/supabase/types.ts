@@ -34,7 +34,7 @@ export type Database = {
       }
       profiles: {
         Row: {
-          cpf: string
+          age: number | null
           created_at: string
           id: string
           name: string
@@ -43,7 +43,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          cpf: string
+          age?: number | null
           created_at?: string
           id?: string
           name: string
@@ -52,7 +52,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          cpf?: string
+          age?: number | null
           created_at?: string
           id?: string
           name?: string
@@ -64,9 +64,9 @@ export type Database = {
       }
       purchases: {
         Row: {
+          age: number | null
+          age_2: number | null
           amount: number
-          cpf: string
-          cpf_2: string | null
           created_at: string
           id: string
           name: string
@@ -77,9 +77,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          age?: number | null
+          age_2?: number | null
           amount: number
-          cpf: string
-          cpf_2?: string | null
           created_at?: string
           id?: string
           name: string
@@ -90,9 +90,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          age?: number | null
+          age_2?: number | null
           amount?: number
-          cpf?: string
-          cpf_2?: string | null
           created_at?: string
           id?: string
           name?: string
