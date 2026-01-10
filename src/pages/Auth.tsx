@@ -7,7 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import vidroLogo from "@/assets/vidro-logo.jpg";
-import { isValidCPF, formatCPF } from "@/lib/cpf-validator";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -18,7 +17,7 @@ const Auth = () => {
     email: "",
     password: "",
     name: "",
-    cpf: "",
+    age: "",
     telegram: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -29,8 +28,6 @@ const Auth = () => {
       navigate("/");
     }
   }, [user, isLoading, navigate]);
-
-  // formatCPF is now imported from lib/cpf-validator
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -51,8 +48,9 @@ const Auth = () => {
       if (!formData.name.trim()) {
         newErrors.name = "Nome é obrigatório";
       }
-      if (!formData.cpf || !isValidCPF(formData.cpf)) {
-        newErrors.cpf = "CPF inválido";
+      const ageNum = parseInt(formData.age, 10);
+      if (!formData.age || isNaN(ageNum) || ageNum < 1 || ageNum > 150) {
+        newErrors.age = "Idade inválida (1-150)";
       }
     }
 
@@ -75,7 +73,7 @@ const Auth = () => {
           formData.email,
           formData.password,
           formData.name,
-          formData.cpf,
+          parseInt(formData.age, 10),
           formData.telegram
         );
         
@@ -109,8 +107,9 @@ const Auth = () => {
   const handleChange = (field: string, value: string) => {
     let formattedValue = value;
     
-    if (field === "cpf") {
-      formattedValue = formatCPF(value);
+    if (field === "age") {
+      // Only allow numbers for age
+      formattedValue = value.replace(/\D/g, "").slice(0, 3);
     }
     
     if (field === "telegram" && value && !value.startsWith("@")) {
@@ -184,16 +183,18 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="cpf">CPF</Label>
+                  <Label htmlFor="age">Idade</Label>
                   <Input
-                    id="cpf"
-                    placeholder="000.000.000-00"
-                    value={formData.cpf}
-                    onChange={(e) => handleChange("cpf", e.target.value)}
-                    className={errors.cpf ? "border-destructive" : ""}
+                    id="age"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Sua idade"
+                    value={formData.age}
+                    onChange={(e) => handleChange("age", e.target.value)}
+                    className={errors.age ? "border-destructive" : ""}
                   />
-                  {errors.cpf && (
-                    <p className="text-sm text-destructive">{errors.cpf}</p>
+                  {errors.age && (
+                    <p className="text-sm text-destructive">{errors.age}</p>
                   )}
                 </div>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Lock, Trash2, Minus, LogOut } from "lucide-react";
+import { X, Trash2, Minus, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,10 +11,10 @@ interface Purchase {
   purchase_type: string;
   amount: number;
   name: string;
-  cpf: string;
+  age: number | null;
   telegram: string | null;
   name_2: string | null;
-  cpf_2: string | null;
+  age_2: number | null;
   telegram_2: string | null;
   created_at: string;
 }
@@ -25,7 +25,7 @@ interface AdminSettings {
 }
 
 const AdminPanel = () => {
-  const { user, isAdmin, signOut } = useAuth();
+  const { isAdmin, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [adminSettings, setAdminSettings] = useState<AdminSettings | null>(null);
@@ -239,7 +239,7 @@ const AdminPanel = () => {
                             <td className="p-4">
                               <div>
                                 <p className="font-medium">{purchase.name}</p>
-                                <p className="text-xs text-muted-foreground">{purchase.cpf}</p>
+                                <p className="text-xs text-muted-foreground">{purchase.age ? `${purchase.age} anos` : "-"}</p>
                                 {purchase.telegram && (
                                   <a
                                     href={`https://t.me/${purchase.telegram.replace("@", "")}`}
@@ -256,7 +256,7 @@ const AdminPanel = () => {
                               {purchase.name_2 ? (
                                 <div>
                                   <p className="font-medium">{purchase.name_2}</p>
-                                  <p className="text-xs text-muted-foreground">{purchase.cpf_2}</p>
+                                  <p className="text-xs text-muted-foreground">{purchase.age_2 ? `${purchase.age_2} anos` : "-"}</p>
                                   {purchase.telegram_2 && (
                                     <a
                                       href={`https://t.me/${purchase.telegram_2.replace("@", "")}`}

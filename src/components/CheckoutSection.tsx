@@ -7,7 +7,6 @@ import { Shield, Clock, Users, Check, Copy, X, User, UserPlus } from "lucide-rea
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { isValidCPF, formatCPF } from "@/lib/cpf-validator";
 
 const PIX_KEY = "538afa8c-0d27-49bb-a98c-f1c9d489d273";
 
@@ -16,7 +15,7 @@ type PurchaseType = "individual" | "casadinha";
 interface PersonData {
   nome: string;
   sobrenome: string;
-  cpf: string;
+  age: string;
   telegram: string;
 }
 
@@ -27,21 +26,19 @@ const CheckoutSection = () => {
   const [person1, setPerson1] = useState<PersonData>({
     nome: "",
     sobrenome: "",
-    cpf: "",
+    age: "",
     telegram: "",
   });
   const [person2, setPerson2] = useState<PersonData>({
     nome: "",
     sobrenome: "",
-    cpf: "",
+    age: "",
     telegram: "",
   });
   const [showPixModal, setShowPixModal] = useState(false);
   const [errors1, setErrors1] = useState<Record<string, string>>({});
   const [errors2, setErrors2] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // formatCPF is now imported from lib/cpf-validator
 
   const validatePerson = (data: PersonData, setErrors: (e: Record<string, string>) => void) => {
     const newErrors: Record<string, string> = {};
@@ -52,8 +49,9 @@ const CheckoutSection = () => {
     if (!data.sobrenome.trim()) {
       newErrors.sobrenome = "Sobrenome é obrigatório";
     }
-    if (!data.cpf || !isValidCPF(data.cpf)) {
-      newErrors.cpf = "CPF inválido";
+    const ageNum = parseInt(data.age, 10);
+    if (!data.age || isNaN(ageNum) || ageNum < 1 || ageNum > 150) {
+      newErrors.age = "Idade inválida (1-150)";
     }
     if (!data.telegram.trim()) {
       newErrors.telegram = "User do Telegram é obrigatório";
@@ -90,10 +88,10 @@ const CheckoutSection = () => {
         purchase_type: purchaseType,
         amount,
         name: `${person1.nome} ${person1.sobrenome}`,
-        cpf: person1.cpf,
+        age: parseInt(person1.age, 10),
         telegram: person1.telegram,
         name_2: purchaseType === "casadinha" ? `${person2.nome} ${person2.sobrenome}` : null,
-        cpf_2: purchaseType === "casadinha" ? person2.cpf : null,
+        age_2: purchaseType === "casadinha" ? parseInt(person2.age, 10) : null,
         telegram_2: purchaseType === "casadinha" ? person2.telegram : null,
       };
 
@@ -122,8 +120,9 @@ const CheckoutSection = () => {
   ) => {
     let formattedValue = value;
     
-    if (field === "cpf") {
-      formattedValue = formatCPF(value);
+    if (field === "age") {
+      // Only allow numbers for age
+      formattedValue = value.replace(/\D/g, "").slice(0, 3);
     }
     
     if (field === "telegram" && value && !value.startsWith("@")) {
@@ -180,14 +179,16 @@ const CheckoutSection = () => {
       </div>
 
       <div className="space-y-2">
-        <Label>CPF</Label>
+        <Label>Idade</Label>
         <Input
-          placeholder="000.000.000-00"
-          value={data.cpf}
-          onChange={(e) => handleChangePerson(person, "cpf", e.target.value)}
-          className={errors.cpf ? "border-destructive" : ""}
+          type="text"
+          inputMode="numeric"
+          placeholder="Sua idade"
+          value={data.age}
+          onChange={(e) => handleChangePerson(person, "age", e.target.value)}
+          className={errors.age ? "border-destructive" : ""}
         />
-        {errors.cpf && <p className="text-sm text-destructive">{errors.cpf}</p>}
+        {errors.age && <p className="text-sm text-destructive">{errors.age}</p>}
       </div>
 
       <div className="space-y-2">
