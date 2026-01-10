@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import vidroLogo from "@/assets/vidro-logo.jpg";
+import { isValidCPF, formatCPF } from "@/lib/cpf-validator";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -29,14 +30,7 @@ const Auth = () => {
     }
   }, [user, isLoading, navigate]);
 
-  const formatCPF = (value: string) => {
-    const numbers = value.replace(/\D/g, "");
-    return numbers
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d{1,2})/, "$1-$2")
-      .slice(0, 14);
-  };
+  // formatCPF is now imported from lib/cpf-validator
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -57,7 +51,7 @@ const Auth = () => {
       if (!formData.name.trim()) {
         newErrors.name = "Nome é obrigatório";
       }
-      if (!formData.cpf || formData.cpf.replace(/\D/g, "").length !== 11) {
+      if (!formData.cpf || !isValidCPF(formData.cpf)) {
         newErrors.cpf = "CPF inválido";
       }
     }

@@ -7,6 +7,7 @@ import { Shield, Clock, Users, Check, Copy, X, User, UserPlus } from "lucide-rea
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { isValidCPF, formatCPF } from "@/lib/cpf-validator";
 
 const PIX_KEY = "538afa8c-0d27-49bb-a98c-f1c9d489d273";
 
@@ -40,14 +41,7 @@ const CheckoutSection = () => {
   const [errors2, setErrors2] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const formatCPF = (value: string) => {
-    const numbers = value.replace(/\D/g, "");
-    return numbers
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d{1,2})/, "$1-$2")
-      .slice(0, 14);
-  };
+  // formatCPF is now imported from lib/cpf-validator
 
   const validatePerson = (data: PersonData, setErrors: (e: Record<string, string>) => void) => {
     const newErrors: Record<string, string> = {};
@@ -58,7 +52,7 @@ const CheckoutSection = () => {
     if (!data.sobrenome.trim()) {
       newErrors.sobrenome = "Sobrenome é obrigatório";
     }
-    if (!data.cpf || data.cpf.replace(/\D/g, "").length !== 11) {
+    if (!data.cpf || !isValidCPF(data.cpf)) {
       newErrors.cpf = "CPF inválido";
     }
     if (!data.telegram.trim()) {
@@ -107,7 +101,6 @@ const CheckoutSection = () => {
 
       if (error) {
         toast.error("Erro ao registrar compra. Tente novamente.");
-        console.error(error);
         return;
       }
 
