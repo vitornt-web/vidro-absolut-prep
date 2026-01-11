@@ -24,13 +24,22 @@ interface AdminSettings {
   total_collected_adjustment: number;
 }
 
-const AdminPanel = () => {
+interface AdminPanelProps {
+  isOpenExternal?: boolean;
+  onCloseExternal?: () => void;
+}
+
+const AdminPanel = ({ isOpenExternal, onCloseExternal }: AdminPanelProps) => {
   const { isAdmin, signOut } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpenInternal, setIsOpenInternal] = useState(false);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [adminSettings, setAdminSettings] = useState<AdminSettings | null>(null);
   const [adjustmentInput, setAdjustmentInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Usa controle externo se fornecido, senão usa interno
+  const isOpen = isOpenExternal !== undefined ? isOpenExternal : isOpenInternal;
+  const setIsOpen = onCloseExternal ? () => onCloseExternal() : setIsOpenInternal;
 
   useEffect(() => {
     if (isOpen && isAdmin) {
@@ -66,7 +75,11 @@ const AdminPanel = () => {
   };
 
   const handleClose = () => {
-    setIsOpen(false);
+    if (onCloseExternal) {
+      onCloseExternal();
+    } else {
+      setIsOpenInternal(false);
+    }
   };
 
   const applyAdjustment = async () => {
@@ -117,20 +130,25 @@ const AdminPanel = () => {
     return new Date(dateString).toLocaleDateString("pt-BR");
   };
 
-  // Only show admin button if user is admin
+  // Only show admin button if user is admin and no external control
   if (!isAdmin) {
     return null;
   }
 
-  if (!isOpen) {
+  // Se está sendo controlado externamente, não mostra o botão flutuante
+  if (isOpenExternal === undefined && !isOpenInternal) {
     return (
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={() => setIsOpenInternal(true)}
         className="fixed bottom-4 right-4 bg-gold text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium shadow-lg hover:bg-gold/90 transition-colors"
       >
         Painel Admin
       </button>
     );
+  }
+
+  if (!isOpen) {
+    return null;
   }
 
   return (
