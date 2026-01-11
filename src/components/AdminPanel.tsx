@@ -11,10 +11,10 @@ interface Purchase {
   purchase_type: string;
   amount: number;
   name: string;
-  age: number | null;
+  phone: string | null;
   telegram: string | null;
   name_2: string | null;
-  age_2: number | null;
+  phone_2: string | null;
   telegram_2: string | null;
   created_at: string;
 }
@@ -239,7 +239,7 @@ const AdminPanel = () => {
                             <td className="p-4">
                               <div>
                                 <p className="font-medium">{purchase.name}</p>
-                                <p className="text-xs text-muted-foreground">{purchase.age ? `${purchase.age} anos` : "-"}</p>
+                                <p className="text-xs text-muted-foreground">{purchase.phone || "-"}</p>
                                 {purchase.telegram && (
                                   <a
                                     href={`https://t.me/${purchase.telegram.replace("@", "")}`}
@@ -256,7 +256,7 @@ const AdminPanel = () => {
                               {purchase.name_2 ? (
                                 <div>
                                   <p className="font-medium">{purchase.name_2}</p>
-                                  <p className="text-xs text-muted-foreground">{purchase.age_2 ? `${purchase.age_2} anos` : "-"}</p>
+                                  <p className="text-xs text-muted-foreground">{purchase.phone_2 || "-"}</p>
                                   {purchase.telegram_2 && (
                                     <a
                                       href={`https://t.me/${purchase.telegram_2.replace("@", "")}`}
