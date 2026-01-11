@@ -6,8 +6,8 @@ const HeroSection = () => {
     document.getElementById("checkout")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const scrollToBenefits = () => {
-    document.getElementById("benefits")?.scrollIntoView({ behavior: "smooth" });
+  const scrollToModules = () => {
+    document.getElementById("modules")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -60,7 +60,7 @@ const HeroSection = () => {
             <Button variant="gold" size="xl" onClick={scrollToCheckout}>
               Quero me inscrever agora
             </Button>
-            <Button variant="goldOutline" size="lg" onClick={scrollToBenefits}>
+            <Button variant="goldOutline" size="lg" onClick={scrollToModules}>
               Ver como funciona
             </Button>
           </div>
