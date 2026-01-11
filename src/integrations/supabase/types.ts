@@ -34,28 +34,28 @@ export type Database = {
       }
       profiles: {
         Row: {
-          age: number | null
           created_at: string
           id: string
           name: string
+          phone: string | null
           telegram: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          age?: number | null
           created_at?: string
           id?: string
           name: string
+          phone?: string | null
           telegram?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          age?: number | null
           created_at?: string
           id?: string
           name?: string
+          phone?: string | null
           telegram?: string | null
           updated_at?: string
           user_id?: string
@@ -64,39 +64,39 @@ export type Database = {
       }
       purchases: {
         Row: {
-          age: number | null
-          age_2: number | null
           amount: number
           created_at: string
           id: string
           name: string
           name_2: string | null
+          phone: string | null
+          phone_2: string | null
           purchase_type: string
           telegram: string | null
           telegram_2: string | null
           user_id: string
         }
         Insert: {
-          age?: number | null
-          age_2?: number | null
           amount: number
           created_at?: string
           id?: string
           name: string
           name_2?: string | null
+          phone?: string | null
+          phone_2?: string | null
           purchase_type: string
           telegram?: string | null
           telegram_2?: string | null
           user_id: string
         }
         Update: {
-          age?: number | null
-          age_2?: number | null
           amount?: number
           created_at?: string
           id?: string
           name?: string
           name_2?: string | null
+          phone?: string | null
+          phone_2?: string | null
           purchase_type?: string
           telegram?: string | null
           telegram_2?: string | null

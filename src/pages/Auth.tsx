@@ -17,7 +17,7 @@ const Auth = () => {
     email: "",
     password: "",
     name: "",
-    age: "",
+    phone: "",
     telegram: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -28,6 +28,14 @@ const Auth = () => {
       navigate("/");
     }
   }, [user, isLoading, navigate]);
+
+  const formatPhone = (value: string): string => {
+    const numbers = value.replace(/\D/g, "");
+    return numbers
+      .replace(/(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{5})(\d)/, "$1-$2")
+      .slice(0, 15);
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -48,9 +56,9 @@ const Auth = () => {
       if (!formData.name.trim()) {
         newErrors.name = "Nome é obrigatório";
       }
-      const ageNum = parseInt(formData.age, 10);
-      if (!formData.age || isNaN(ageNum) || ageNum < 1 || ageNum > 150) {
-        newErrors.age = "Idade inválida (1-150)";
+      const phoneDigits = formData.phone.replace(/\D/g, "");
+      if (!formData.phone || phoneDigits.length < 10 || phoneDigits.length > 11) {
+        newErrors.phone = "Telefone inválido";
       }
     }
 
@@ -73,7 +81,7 @@ const Auth = () => {
           formData.email,
           formData.password,
           formData.name,
-          parseInt(formData.age, 10),
+          formData.phone,
           formData.telegram
         );
         
@@ -107,9 +115,8 @@ const Auth = () => {
   const handleChange = (field: string, value: string) => {
     let formattedValue = value;
     
-    if (field === "age") {
-      // Only allow numbers for age
-      formattedValue = value.replace(/\D/g, "").slice(0, 3);
+    if (field === "phone") {
+      formattedValue = formatPhone(value);
     }
     
     if (field === "telegram" && value && !value.startsWith("@")) {
@@ -183,18 +190,18 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="age">Idade</Label>
+                  <Label htmlFor="phone">Telefone</Label>
                   <Input
-                    id="age"
-                    type="text"
+                    id="phone"
+                    type="tel"
                     inputMode="numeric"
-                    placeholder="Sua idade"
-                    value={formData.age}
-                    onChange={(e) => handleChange("age", e.target.value)}
-                    className={errors.age ? "border-destructive" : ""}
+                    placeholder="(00) 00000-0000"
+                    value={formData.phone}
+                    onChange={(e) => handleChange("phone", e.target.value)}
+                    className={errors.phone ? "border-destructive" : ""}
                   />
-                  {errors.age && (
-                    <p className="text-sm text-destructive">{errors.age}</p>
+                  {errors.phone && (
+                    <p className="text-sm text-destructive">{errors.phone}</p>
                   )}
                 </div>
 

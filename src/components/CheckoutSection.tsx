@@ -15,7 +15,7 @@ type PurchaseType = "individual" | "casadinha";
 interface PersonData {
   nome: string;
   sobrenome: string;
-  age: string;
+  phone: string;
   telegram: string;
 }
 
@@ -26,19 +26,27 @@ const CheckoutSection = () => {
   const [person1, setPerson1] = useState<PersonData>({
     nome: "",
     sobrenome: "",
-    age: "",
+    phone: "",
     telegram: "",
   });
   const [person2, setPerson2] = useState<PersonData>({
     nome: "",
     sobrenome: "",
-    age: "",
+    phone: "",
     telegram: "",
   });
   const [showPixModal, setShowPixModal] = useState(false);
   const [errors1, setErrors1] = useState<Record<string, string>>({});
   const [errors2, setErrors2] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const formatPhone = (value: string): string => {
+    const numbers = value.replace(/\D/g, "");
+    return numbers
+      .replace(/(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{5})(\d)/, "$1-$2")
+      .slice(0, 15);
+  };
 
   const validatePerson = (data: PersonData, setErrors: (e: Record<string, string>) => void) => {
     const newErrors: Record<string, string> = {};
@@ -49,9 +57,9 @@ const CheckoutSection = () => {
     if (!data.sobrenome.trim()) {
       newErrors.sobrenome = "Sobrenome é obrigatório";
     }
-    const ageNum = parseInt(data.age, 10);
-    if (!data.age || isNaN(ageNum) || ageNum < 1 || ageNum > 150) {
-      newErrors.age = "Idade inválida (1-150)";
+    const phoneDigits = data.phone.replace(/\D/g, "");
+    if (!data.phone || phoneDigits.length < 10 || phoneDigits.length > 11) {
+      newErrors.phone = "Telefone inválido";
     }
     if (!data.telegram.trim()) {
       newErrors.telegram = "User do Telegram é obrigatório";
@@ -88,10 +96,10 @@ const CheckoutSection = () => {
         purchase_type: purchaseType,
         amount,
         name: `${person1.nome} ${person1.sobrenome}`,
-        age: parseInt(person1.age, 10),
+        phone: person1.phone,
         telegram: person1.telegram,
         name_2: purchaseType === "casadinha" ? `${person2.nome} ${person2.sobrenome}` : null,
-        age_2: purchaseType === "casadinha" ? parseInt(person2.age, 10) : null,
+        phone_2: purchaseType === "casadinha" ? person2.phone : null,
         telegram_2: purchaseType === "casadinha" ? person2.telegram : null,
       };
 
@@ -120,9 +128,8 @@ const CheckoutSection = () => {
   ) => {
     let formattedValue = value;
     
-    if (field === "age") {
-      // Only allow numbers for age
-      formattedValue = value.replace(/\D/g, "").slice(0, 3);
+    if (field === "phone") {
+      formattedValue = formatPhone(value);
     }
     
     if (field === "telegram" && value && !value.startsWith("@")) {
@@ -179,16 +186,16 @@ const CheckoutSection = () => {
       </div>
 
       <div className="space-y-2">
-        <Label>Idade</Label>
+        <Label>Telefone</Label>
         <Input
-          type="text"
+          type="tel"
           inputMode="numeric"
-          placeholder="Sua idade"
-          value={data.age}
-          onChange={(e) => handleChangePerson(person, "age", e.target.value)}
-          className={errors.age ? "border-destructive" : ""}
+          placeholder="(00) 00000-0000"
+          value={data.phone}
+          onChange={(e) => handleChangePerson(person, "phone", e.target.value)}
+          className={errors.phone ? "border-destructive" : ""}
         />
-        {errors.age && <p className="text-sm text-destructive">{errors.age}</p>}
+        {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
       </div>
 
       <div className="space-y-2">
