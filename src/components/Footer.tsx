@@ -1,6 +1,14 @@
+import { useAuth } from "@/contexts/AuthContext";
+import { Lock } from "lucide-react";
 import vidroLogo from "@/assets/vidro-logo.jpg";
 
 const Footer = () => {
+  const { isAdmin } = useAuth();
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <footer className="py-12 border-t border-border/50">
       <div className="container mx-auto px-4">
@@ -29,6 +37,15 @@ const Footer = () => {
             >
               Contato
             </a>
+            {isAdmin && (
+              <button
+                onClick={scrollToTop}
+                className="flex items-center gap-1 hover:text-gold transition-colors"
+              >
+                <Lock className="w-3 h-3" />
+                Admin
+              </button>
+            )}
           </div>
 
           {/* Copyright */}
