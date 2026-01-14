@@ -66,6 +66,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          has_access: boolean | null
           id: string
           name: string
           name_2: string | null
@@ -79,6 +80,7 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string
+          has_access?: boolean | null
           id?: string
           name: string
           name_2?: string | null
@@ -92,6 +94,7 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          has_access?: boolean | null
           id?: string
           name?: string
           name_2?: string | null
@@ -101,6 +104,87 @@ export type Database = {
           telegram?: string | null
           telegram_2?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      routine_tasks: {
+        Row: {
+          created_at: string
+          friday: boolean | null
+          id: string
+          monday: boolean | null
+          saturday: boolean | null
+          sort_order: number | null
+          sunday: boolean | null
+          task_name: string
+          thursday: boolean | null
+          time_slot: string | null
+          tuesday: boolean | null
+          user_id: string
+          wednesday: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          friday?: boolean | null
+          id?: string
+          monday?: boolean | null
+          saturday?: boolean | null
+          sort_order?: number | null
+          sunday?: boolean | null
+          task_name: string
+          thursday?: boolean | null
+          time_slot?: string | null
+          tuesday?: boolean | null
+          user_id: string
+          wednesday?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          friday?: boolean | null
+          id?: string
+          monday?: boolean | null
+          saturday?: boolean | null
+          sort_order?: number | null
+          sunday?: boolean | null
+          task_name?: string
+          thursday?: boolean | null
+          time_slot?: string | null
+          tuesday?: boolean | null
+          user_id?: string
+          wednesday?: boolean | null
+        }
+        Relationships: []
+      }
+      study_cycle_subjects: {
+        Row: {
+          calculated_hours: number
+          completed_hours: number
+          created_at: string
+          id: string
+          subject_name: string
+          updated_at: string
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          calculated_hours?: number
+          completed_hours?: number
+          created_at?: string
+          id?: string
+          subject_name: string
+          updated_at?: string
+          user_id: string
+          weight?: number
+        }
+        Update: {
+          calculated_hours?: number
+          completed_hours?: number
+          created_at?: string
+          id?: string
+          subject_name?: string
+          updated_at?: string
+          user_id?: string
+          weight?: number
         }
         Relationships: []
       }
@@ -122,6 +206,36 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_study_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          study_mode: string
+          target_university: string | null
+          updated_at: string
+          user_id: string
+          weekly_hours: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          study_mode: string
+          target_university?: string | null
+          updated_at?: string
+          user_id: string
+          weekly_hours?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          study_mode?: string
+          target_university?: string | null
+          updated_at?: string
+          user_id?: string
+          weekly_hours?: number | null
         }
         Relationships: []
       }
