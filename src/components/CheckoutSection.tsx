@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Clock, Users, Check, Copy, X, User, UserPlus } from "lucide-react";
+import { Shield, Clock, Users, Check, Copy, X, User, UserPlus, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +38,28 @@ const CheckoutSection = () => {
   const [showPixModal, setShowPixModal] = useState(false);
   const [errors1, setErrors1] = useState<Record<string, string>>({});
   const [errors2, setErrors2] = useState<Record<string, string>>({});
+  const [hasAccess, setHasAccess] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      checkAccess();
+    }
+  }, [user]);
+
+  const checkAccess = async () => {
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("purchases")
+      .select("has_access")
+      .eq("user_id", user.id)
+      .eq("has_access", true)
+      .maybeSingle();
+
+    if (data) {
+      setHasAccess(true);
+    }
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formatPhone = (value: string): string => {
@@ -295,15 +317,30 @@ const CheckoutSection = () => {
                   </>
                 )}
 
-                <Button
-                  type="submit"
-                  variant="gold"
-                  size="xl"
-                  className="w-full"
-                  disabled={!user || isSubmitting}
-                >
-                  {isSubmitting ? "PROCESSANDO..." : "GERAR PAGAMENTO PIX"}
-                </Button>
+                <div className="flex flex-col gap-3">
+                  <Button
+                    type="submit"
+                    variant="gold"
+                    size="xl"
+                    className="w-full"
+                    disabled={!user || isSubmitting}
+                  >
+                    {isSubmitting ? "PROCESSANDO..." : "GERAR PAGAMENTO PIX"}
+                  </Button>
+                  
+                  {hasAccess && (
+                    <Button
+                      type="button"
+                      variant="goldOutline"
+                      size="xl"
+                      className="w-full"
+                      onClick={() => navigate("/dashboard")}
+                    >
+                      <GraduationCap className="w-5 h-5 mr-2" />
+                      Vidro Absolut - Plataforma
+                    </Button>
+                  )}
+                </div>
               </form>
 
               {/* Info */}
