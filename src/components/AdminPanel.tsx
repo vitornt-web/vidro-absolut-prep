@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Trash2, Minus, LogOut } from "lucide-react";
+import { X, Trash2, Minus, LogOut, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ interface Purchase {
   phone_2: string | null;
   telegram_2: string | null;
   created_at: string;
+  has_access: boolean;
 }
 
 interface AdminSettings {
@@ -106,6 +107,23 @@ const AdminPanel = ({ isOpenExternal, onCloseExternal }: AdminPanelProps) => {
     setAdminSettings({ ...adminSettings, total_collected_adjustment: newAdjustment });
     setAdjustmentInput("");
     toast.success(`R$ ${value.toFixed(2).replace(".", ",")} subtraído do total`);
+  };
+
+  const toggleAccess = async (id: string, currentAccess: boolean) => {
+    const { error } = await supabase
+      .from("purchases")
+      .update({ has_access: !currentAccess })
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Erro ao atualizar acesso");
+      return;
+    }
+
+    setPurchases(purchases.map((p) => 
+      p.id === id ? { ...p, has_access: !currentAccess } : p
+    ));
+    toast.success(currentAccess ? "Acesso revogado" : "Acesso liberado!");
   };
 
   const deletePurchase = async (id: string) => {
@@ -238,6 +256,7 @@ const AdminPanel = ({ isOpenExternal, onCloseExternal }: AdminPanelProps) => {
                           <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Pessoa 1</th>
                           <th className="text-left p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Pessoa 2</th>
                           <th className="text-right p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Valor</th>
+                          <th className="text-center p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Acesso</th>
                           <th className="text-center p-4 text-muted-foreground font-semibold text-xs uppercase tracking-wider border-b border-border">Ações</th>
                         </tr>
                       </thead>
@@ -292,6 +311,23 @@ const AdminPanel = ({ isOpenExternal, onCloseExternal }: AdminPanelProps) => {
                             </td>
                             <td className="p-4 text-right font-semibold text-emerald-500">
                               R$ {Number(purchase.amount).toFixed(2).replace(".", ",")}
+                            </td>
+                            <td className="p-4 text-center">
+                              <button
+                                onClick={() => toggleAccess(purchase.id, purchase.has_access)}
+                                className={`p-2 rounded-lg transition-colors ${
+                                  purchase.has_access
+                                    ? "bg-green-500/20 text-green-500 hover:bg-green-500/30"
+                                    : "bg-red-500/20 text-red-500 hover:bg-red-500/30"
+                                }`}
+                                title={purchase.has_access ? "Revogar acesso" : "Liberar acesso"}
+                              >
+                                {purchase.has_access ? (
+                                  <CheckCircle className="w-5 h-5" />
+                                ) : (
+                                  <XCircle className="w-5 h-5" />
+                                )}
+                              </button>
                             </td>
                             <td className="p-4 text-center">
                               <Button
