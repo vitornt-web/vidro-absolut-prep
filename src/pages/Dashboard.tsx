@@ -7,7 +7,7 @@ import { LogOut, BookOpen, Calendar, GraduationCap, Settings } from "lucide-reac
 import RoutineMode from "@/components/dashboard/RoutineMode";
 import StudyCycleMode from "@/components/dashboard/StudyCycleMode";
 import StudyModeSelection from "@/components/dashboard/StudyModeSelection";
-import fundoSite from "@/assets/fundo-site.jpg";
+import dashboardBg from "@/assets/dashboard-bg.jpg";
 
 const Dashboard = () => {
   const { user, signOut, isLoading } = useAuth();
@@ -118,7 +118,7 @@ const Dashboard = () => {
     <div 
       className="min-h-screen bg-background"
       style={{
-        backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.95)), url(${fundoSite})`,
+        backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.95)), url(${dashboardBg})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundAttachment: "fixed"
